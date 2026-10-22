@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo Multicritério de Peças - adriapetroski-lab</title>
+    <title>Catálogo de Peças - adriapetroski-lab</title>
     <style>
         :root {
             --primary: #0056b3;
@@ -28,31 +28,26 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border);
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            background: none;
-            border: none;
-            font-size: 16px;
+        h1 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        .section-divider {
+            text-align: center;
+            margin: 20px 0;
             font-weight: bold;
-            cursor: pointer;
             color: #6c757d;
-            border-bottom: 3px solid transparent;
+            position: relative;
         }
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
+        .section-divider::before, .section-divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 43%;
+            height: 1px;
+            background: var(--border);
         }
-        .form-group { margin-bottom: 20px; }
-        .search-panel { display: none; }
-        .search-panel.active { display: block; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; }
+        .section-divider::before { left: 0; }
+        .section-divider::after { right: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; }
         input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 12px;
@@ -64,9 +59,9 @@
         input#placa { 
             text-transform: uppercase; 
             text-align: center; 
-            font-size: 22px; 
+            font-size: 20px; 
             font-weight: bold; 
-            letter-spacing: 3px;
+            letter-spacing: 2px;
         }
         button.btn-search {
             width: 100%;
@@ -78,6 +73,7 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            margin-top: 15px;
             transition: background 0.2s;
         }
         button.btn-search:hover { background-color: #004085; }
@@ -115,7 +111,6 @@
             border-bottom: 1px solid var(--border);
         }
         th { background-color: #f1f1f1; }
-        .loading { text-align: center; font-weight: bold; color: var(--primary); display: none; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -123,60 +118,45 @@
 <div class="container">
     <h1>Catálogo de Peças - adriapetroski-lab</h1>
     
-    <!-- Duas formas de busca separadas por abas -->
-    <div class="tabs">
-        <button id="btn-placa" class="tab-btn active" onclick="switchTab('aba-placa')">Busca por Placa</button>
-        <button id="btn-modelo" class="tab-btn" onclick="switchTab('aba-modelo')">Busca por Modelo e Ano</button>
-    </div>
-
-    <!-- Forma 1: Painel por Placa -->
-    <div id="aba-placa" class="search-panel active">
-        <div class="form-group">
-            <label for="placa">Digite a Placa do Veículo:</label>
-            <input type="text" id="placa" placeholder="EX: ABC1D23" maxlength="7">
-        </div>
-    </div>
-
-    <!-- Forma 2: Painel por Modelo e Ano -->
-    <div id="aba-modelo" class="search-panel">
-        <div class="form-group">
-            <label for="modelo-input">Digite o Modelo do Veículo:</label>
-            <input type="text" id="modelo-input" placeholder="Ex: Gol, Corsa, Fiesta...">
-        </div>
-        <div class="form-group">
-            <label for="ano-input">Digite o Ano do Veículo:</label>
-            <input type="number" id="ano-input" placeholder="Ex: 2022" min="1980" max="2027">
-        </div>
-    </div>
-
-    <!-- Filtro de categoria de peças -->
+    <!-- OPÇÃO A: Campo de Placa -->
     <div class="form-group">
-        <label for="categoria">Selecione a Categoria de Peças:</label>
+        <label for="placa">Opção 1: Buscar por Placa</label>
+        <input type="text" id="placa" placeholder="Digite a placa (Ex: ABC1D23)" maxlength="7">
+    </div>
+
+    <div class="section-divider">OU</div>
+
+    <!-- OPÇÃO B: Campos de Modelo e Ano -->
+    <div class="form-group">
+        <label for="modelo-input">Opção 2: Buscar por Modelo</label>
+        <input type="text" id="modelo-input" placeholder="Digite o modelo (Ex: Gol, Corsa)">
+    </div>
+    <div class="form-group">
+        <label for="ano-input">Ano do Veículo</label>
+        <input type="number" id="ano-input" placeholder="Digite o ano (Ex: 2022)" min="1980" max="2027">
+    </div>
+
+    <!-- Campo de Seleção de Categoria Obrigatório -->
+    <div class="form-group" style="margin-top: 25px;">
+        <label for="categoria">Selecione a Categoria de Peças Requerida:</label>
         <select id="categoria">
             <option value="">-- Escolha uma Categoria --</option>
             <option value="oleo_filtros">Óleo e Filtros</option>
             <option value="amortecedores">Amortecedores e Kits Completos</option>
-            <option value="freios">Freios</option>
+            <option value="freios">Freios (Marcas Mais Usadas)</option>
             <option value="suspensao">Outras Peças de Suspensão</option>
         </select>
     </div>
 
     <button class="btn-search" onclick="executarBusca()">Buscar Informações</button>
-    <div id="loading" class="loading">Consultando banco de dados técnico...</div>
 
     <div id="resultado" class="result-box"></div>
 </div>
 
 <script>
-// Banco de dados interno estruturado para as motorizações e anos correspondentes
 const bancoDadosVeiculos = [
     {
-        id: "v1",
-        placa: "ABC1D23",
-        marca: "Volkswagen",
-        modelo: "Gol",
-        versao: "1.0 MPI",
-        ano: 2022,
+        id: "v1", placa: "ABC1D23", marca: "Volkswagen", modelo: "Gol", versao: "1.0 MPI", ano: 2022,
         oleo_filtros: {
             viscosidade: "5W30 Sintético", quantidade: "3.5 Litros",
             filtros: [
@@ -200,14 +180,9 @@ const bancoDadosVeiculos = [
         suspensao: { pecas: [{ item: "Bucha da Bandeja", marca: "Axios", codigo: "011.123" }, { item: "Pivô", marca: "Nakata", codigo: "N1002" }] }
     },
     {
-        id: "v2",
-        placa: "XYZ9999",
-        marca: "Chevrolet",
-        modelo: "Corsa",
-        versao: "Wind 1.4",
-        ano: 1999,
+        id: "v2", placa: "XYZ9999", marca: "Chevrolet", modelo: "Corsa", versao: "Wind 1.4", ano: 1999,
         oleo_filtros: {
-            viscosidade: "15W40 Semiaquático / Sintético", quantidade: "3.5 Litros",
+            viscosidade: "15W40 Semiaquático", quantidade: "3.5 Litros",
             filtros: [
                 { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM2" },
                 { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI01/1" },
@@ -225,36 +200,56 @@ const bancoDadosVeiculos = [
                 { item: "Kit Traseiro (Sem Coxim)", marca: "Axios", codigo: "BR20900" }
             ]
         },
-        freios: { pecas: [{ item: "Pastilha de Freio", marca: "Fras-le", codigo: "PD/63-A" }] },
-        suspensao: { pecas: [{ item: "Terminal de Direção", marca: "Viemar / Nakata", codigo: "N112" }] }
+        freios: { pecas: [{ item: "Pastilha de Freio Dianteira", marca: "Fras-le", codigo: "PD/63-A" }] },
+        suspensao: { pecas: [{ item: "Terminal de Direção", marca: "Nakata", codigo: "N112" }] }
     }
 ];
 
-let modoAtual = 'aba-placa';
-
-function switchTab(tabId) {
-    modoAtual = tabId;
-    document.getElementById('btn-placa').classList.remove('active');
-    document.getElementById('btn-modelo').classList.remove('active');
-    document.getElementById('aba-placa').classList.remove('active');
-    document.getElementById('aba-modelo').classList.remove('active');
-    
-    if(tabId === 'aba-placa') {
-        document.getElementById('btn-placa').classList.add('active');
-    } else {
-        document.getElementById('btn-modelo').classList.add('active');
-    }
-    document.getElementById(tabId).classList.add('active');
-    document.getElementById("resultado").style.display = "none";
-}
-
 function executarBusca() {
+    const placaInput = document.getElementById("placa").value.trim().toUpperCase();
+    const modeloInput = document.getElementById("modelo-input").value.trim().toLowerCase();
+    const anoInput = parseInt(document.getElementById("ano-input").value);
     const categoria = document.getElementById("categoria").value;
     const resultadoDiv = document.getElementById("resultado");
-    const loading = document.getElementById("loading");
 
     if (!categoria) {
         alert("Por favor, selecione uma categoria de peças.");
         return;
     }
 
+    // Regra de Validação: Obriga o preenchimento correto de uma das formas
+    const temPlaca = placaInput.length > 0;
+    const temModeloEAno = modeloInput.length > 0 && !isNaN(anoInput);
+
+    if (!temPlaca && !temModeloEAno) {
+        alert("Erro: Preencha a Placa OU informe o Modelo junto com o Ano do veículo.");
+        return;
+    }
+
+    let veiculoLocalizado = null;
+
+    if (temPlaca) {
+        veiculoLocalizado = bancoDadosVeiculos.find(v => v.placa === placaInput);
+    } else {
+        veiculoLocalizado = bancoDadosVeiculos.find(v => 
+            v.modelo.toLowerCase().includes(modeloInput) && v.ano === anoInput
+        );
+    }
+
+    resultadoDiv.style.display = "block";
+
+    if (veiculoLocalizado) {
+        renderizarPainelResultados(veiculoLocalizado, categoria);
+    } else {
+        resultadoDiv.innerHTML = `
+            <div class='vehicle-info' style='background-color:#f8d7da; color:#721c24; border-left-color:#dc3545;'>
+                ⚠️ Nenhum veículo localizado com os critérios informados. <br>
+                <strong>Para testar use:</strong> Placa: <code>ABC1D23</code> ou digite Modelo: <code>Gol</code> e Ano: <code>2022</code>.
+            </div>`;
+    }
+}
+
+function renderizarPainelResultados(veiculo, categoria) {
+    const resultadoDiv = document.getElementById("resultado");
+    
+    let htmlContent = `
