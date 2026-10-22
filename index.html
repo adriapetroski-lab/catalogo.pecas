@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Peças Automotivas - adriapetroski-lab</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; }
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="text"] { text-transform: uppercase; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #004085; }
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fafafa;
+            display: none;
+        }
+        .vehicle-info {
+            background-color: #e2e3e5;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .category-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Catálogo de Peças - Busca por Placa</h1>
+    
+    <div class="form-group">
+        <label for="placa">Digite a Placa do Veículo:</label>
+        <input type="text" id="placa" placeholder="Ex: ABC1D23 ou XYZ1234" maxlength="7">
+    </div>
+
+    <div class="form-group">
+        <label for="categoria">Selecione a Categoria de Peças:</label>
+        <select id="categoria">
+            <option value="">-- Escolha uma Categoria --</option>
+            <option value="oleo_filtros">Óleo e Filtros</option>
+            <option value="amortecedores">Amortecedores e Kits</option>
+            <option value="freios">Freios</option>
+            <option value="suspensao">Outras Peças de Suspensão</option>
+        </select>
+    </div>
+
+    <button onclick="buscarDados()">Buscar Informações</button>
+
+    <div id="resultado" class="result-box"></div>
+</div>
+
+<script>
+// Banco de dados simulado (Mock Data) por Placa
+const bancoDadosVeiculos = {
+    "ABC1D23": {
+        modelo: "Volkswagen Gol 1.0 MPI 2022",
+        oleo_filtros: {
+            viscosidade: "5W30 Sintético",
+            quantidade: "3.5 Litros",
+            filtros: [
+                { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM1" },
+                { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI04/7" },
+                { nome: "Filtro de Ar do Motor", marca: "Tecfil", codigo: "ARL6096" },
+                { nome: "Filtro de Ar Condicionado (Cabine)", marca: "Tecfil", codigo: "ACP303" }
+            ]
+        },
+        amortecedores: {
+            pecas: [
+                { item: "Amortecedor Dianteiro (Par)", marca: "Cofap", codigo: "GP32287" },
+                { item: "Amortecedor Traseiro (Par)", marca: "Cofap", codigo: "GB32312" },
+                { item: "Kit Dianteiro (com Coxim)", marca: "Axios", codigo: "BR10100" },
+                { item: "Kit Traseiro (sem Coxim)", marca: "Axios", codigo: "BR20200" }
+            ]
+        },
+        freios: {
+            pecas: [
+                { item: "Pastilha de Freio Dianteira", marca: "Fras-le", codigo: "PD/60" },
+                { item: "Disco de Freio Dianteiro", marca: "Fremax", codigo: "BD-5600" },
+                { item: "Fluido de Freio DOT 4", marca: "Controil", codigo: "C-2004" }
+            ]
+        },
+        suspensao: {
+            pecas: [
+                { item: "Bucha da Bandeja", marca: "Axios", codigo: "011.123" },
+                { item: "Pivô de Suspensão", marca: "Nakata", codigo: "N1002" },
+                { item: "Terminal de Direção", marca: "Nakata", codigo: "N1024" }
+            ]
+        }
+    }
+};
+
+function buscarDados() {
+    const placaInput = document.getElementById("placa").value.trim().toUpperCase();
+    const categoriaSelecionada = document.getElementById("categoria").value;
+    const resultadoDiv = document.getElementById("resultado");
+
+    if (!placaInput || !categoriaSelecionada) {
+        alert("Por favor, preencha a placa e selecione uma categoria.");
+        return;
+    }
+
+    const veiculo = bancoDadosVeiculos[placaInput];
+
+    if (!veiculo) {
+        resultadoDiv.style.display = "block";
+        resultadoDiv.innerHTML = `<div class='vehicle-info' style='background-color:#f8d7da; color:#721c24;'>
+            Placa ${placaInput} não cadastrada no sistema. Use a placa de teste: <strong>ABC1D23</strong>.
+        </div>`;
+        return;
+    }
+
+    resultadoDiv.style.display = "block";
+    let htmlContent = `<div class="vehicle-info">Veículo: ${veiculo.modelo} | Placa: ${placaInput}</div>`;
+
+    if (categoriaSelecionada === "oleo_filtros") {
+        const dados = veiculo.oleo_filtros;
+        htmlContent += `<h3 class="category-title">Óleo e Filtros</h3>`;
+        htmlContent += `<p><strong>Viscosidade Correta:</strong> ${dados.viscosidade}</p>`;
+        htmlContent += `<p><strong>Quantidade Recomendada:</strong> ${dados.quantidade}</p>`;
+        htmlContent += `<table>
+            <tr><th>Componente</th><th>Marca</th><th>Código</th></tr>`;
+        dados.filtros.forEach(f => {
+            htmlContent += `<tr><td>${f.nome}</td><td>${f.marca}</td><td><strong>${f.codigo}</strong></td></tr>`;
+        });
+        htmlContent += `</table>`;
+    } 
+    
+    else if (categoriaSelecionada === "amortecedores") {
+        const dados = veiculo.amortecedores;
+        htmlContent += `<h3 class="category-title">Amortecedores e Kits</h3>`;
+        htmlContent += `<table>
+            <tr><th>Componente</th><th>Marca</th><th>Código</th></tr>`;
+        dados.pecas.forEach(p => {
+            htmlContent += `<tr><td>${p.item}</td><td>${p.marca}</td><td><strong>${p.codigo}</strong></td></tr>`;
+        });
+        htmlContent += `</table>`;
+    } 
+    
+    else if (categoriaSelecionada === "freios") {
+        const dados = veiculo.freios;
+        htmlContent += `<h3 class="category-title">Sistemas de Freios</h3>`;
+        htmlContent += `<table>
+            <tr><th>Componente</th><th>Marca Mais Usada</th><th>Código</th></tr>`;
+        dados.pecas.forEach(p => {
+            htmlContent += `<tr><td>${p.item}</td><td>${p.marca}</td><td><strong>${p.codigo}</strong></td></tr>`;
+        });
+        htmlContent += `</table>`;
+    } 
+    
+    else if (categoriaSelecionada === "suspensao") {
+        const dados = veiculo.suspensao;
+        htmlContent += `<h3 class="category-title">Outras Peças de Suspensão</h3>`;
+        htmlContent += `<table>
+            <tr><th>Componente</th><th>Marca Mais Usada</th><th>Código</th></tr>`;
+        dados.pecas.forEach(p => {
+            htmlContent += `<tr><td>${p.item}</td><td>${p.marca}</td><td><strong>${p.codigo}</strong></td></tr>`;
+        });
+        htmlContent += `</table>`;
+    }
+
+    resultadoDiv.innerHTML = htmlContent;
+}
+</script>
+
+</body>
+</html>
