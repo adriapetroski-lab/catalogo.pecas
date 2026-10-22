@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Peças Automotivas - adriapetroski-lab</title>
+    <title>Catálogo Multicritério de Peças - adriapetroski-lab</title>
     <style>
         :root {
             --primary: #0056b3;
             --dark: #212529;
             --light: #f8f9fa;
             --border: #dee2e6;
+            --success: #28a745;
+            --danger: #dc3545;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,9 +29,31 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
         .form-group { margin-bottom: 20px; }
+        .search-panel { display: none; }
+        .search-panel.active { display: block; }
         label { display: block; font-weight: bold; margin-bottom: 8px; }
-        input[type="text"], select {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
@@ -37,8 +61,14 @@
             box-sizing: border-box;
             font-size: 16px;
         }
-        input[type="text"] { text-transform: uppercase; }
-        button {
+        input#placa { 
+            text-transform: uppercase; 
+            text-align: center; 
+            font-size: 22px; 
+            font-weight: bold; 
+            letter-spacing: 3px;
+        }
+        button.btn-search {
             width: 100%;
             padding: 14px;
             background-color: var(--primary);
@@ -50,7 +80,7 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        button:hover { background-color: #004085; }
+        button.btn-search:hover { background-color: #004085; }
         .result-box {
             margin-top: 30px;
             padding: 20px;
@@ -61,10 +91,12 @@
         }
         .vehicle-info {
             background-color: #e2e3e5;
-            padding: 12px;
+            padding: 15px;
             border-radius: 4px;
-            font-weight: bold;
+            font-size: 18px;
+            border-left: 6px solid var(--success);
             margin-bottom: 20px;
+            line-height: 1.6;
         }
         .category-title {
             color: var(--primary);
@@ -83,42 +115,70 @@
             border-bottom: 1px solid var(--border);
         }
         th { background-color: #f1f1f1; }
+        .loading { text-align: center; font-weight: bold; color: var(--primary); display: none; margin: 15px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Catálogo de Peças - Busca por Placa</h1>
+    <h1>Catálogo de Peças - adriapetroski-lab</h1>
     
-    <div class="form-group">
-        <label for="placa">Digite a Placa do Veículo:</label>
-        <input type="text" id="placa" placeholder="Ex: ABC1D23 ou XYZ1234" maxlength="7">
+    <!-- Duas formas de busca separadas por abas -->
+    <div class="tabs">
+        <button id="btn-placa" class="tab-btn active" onclick="switchTab('aba-placa')">Busca por Placa</button>
+        <button id="btn-modelo" class="tab-btn" onclick="switchTab('aba-modelo')">Busca por Modelo e Ano</button>
     </div>
 
+    <!-- Forma 1: Painel por Placa -->
+    <div id="aba-placa" class="search-panel active">
+        <div class="form-group">
+            <label for="placa">Digite a Placa do Veículo:</label>
+            <input type="text" id="placa" placeholder="EX: ABC1D23" maxlength="7">
+        </div>
+    </div>
+
+    <!-- Forma 2: Painel por Modelo e Ano -->
+    <div id="aba-modelo" class="search-panel">
+        <div class="form-group">
+            <label for="modelo-input">Digite o Modelo do Veículo:</label>
+            <input type="text" id="modelo-input" placeholder="Ex: Gol, Corsa, Fiesta...">
+        </div>
+        <div class="form-group">
+            <label for="ano-input">Digite o Ano do Veículo:</label>
+            <input type="number" id="ano-input" placeholder="Ex: 2022" min="1980" max="2027">
+        </div>
+    </div>
+
+    <!-- Filtro de categoria de peças -->
     <div class="form-group">
         <label for="categoria">Selecione a Categoria de Peças:</label>
         <select id="categoria">
             <option value="">-- Escolha uma Categoria --</option>
             <option value="oleo_filtros">Óleo e Filtros</option>
-            <option value="amortecedores">Amortecedores e Kits</option>
+            <option value="amortecedores">Amortecedores e Kits Completos</option>
             <option value="freios">Freios</option>
             <option value="suspensao">Outras Peças de Suspensão</option>
         </select>
     </div>
 
-    <button onclick="buscarDados()">Buscar Informações</button>
+    <button class="btn-search" onclick="executarBusca()">Buscar Informações</button>
+    <div id="loading" class="loading">Consultando banco de dados técnico...</div>
 
     <div id="resultado" class="result-box"></div>
 </div>
 
 <script>
-// Banco de dados simulado (Mock Data) por Placa
-const bancoDadosVeiculos = {
-    "ABC1D23": {
-        modelo: "Volkswagen Gol 1.0 MPI 2022",
+// Banco de dados interno estruturado para as motorizações e anos correspondentes
+const bancoDadosVeiculos = [
+    {
+        id: "v1",
+        placa: "ABC1D23",
+        marca: "Volkswagen",
+        modelo: "Gol",
+        versao: "1.0 MPI",
+        ano: 2022,
         oleo_filtros: {
-            viscosidade: "5W30 Sintético",
-            quantidade: "3.5 Litros",
+            viscosidade: "5W30 Sintético", quantidade: "3.5 Litros",
             filtros: [
                 { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM1" },
                 { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI04/7" },
@@ -130,99 +190,71 @@ const bancoDadosVeiculos = {
             pecas: [
                 { item: "Amortecedor Dianteiro (Par)", marca: "Cofap", codigo: "GP32287" },
                 { item: "Amortecedor Traseiro (Par)", marca: "Cofap", codigo: "GB32312" },
-                { item: "Kit Dianteiro (com Coxim)", marca: "Axios", codigo: "BR10100" },
-                { item: "Kit Traseiro (sem Coxim)", marca: "Axios", codigo: "BR20200" }
+                { item: "Kit Dianteiro (Com Coxim)", marca: "Axios", codigo: "BR10100" },
+                { item: "Kit Dianteiro (Sem Coxim)", marca: "Axios", codigo: "BR10101" },
+                { item: "Kit Traseiro (Com Coxim)", marca: "Axios", codigo: "BR20201" },
+                { item: "Kit Traseiro (Sem Coxim)", marca: "Axios", codigo: "BR20200" }
             ]
         },
-        freios: {
-            pecas: [
-                { item: "Pastilha de Freio Dianteira", marca: "Fras-le", codigo: "PD/60" },
-                { item: "Disco de Freio Dianteiro", marca: "Fremax", codigo: "BD-5600" },
-                { item: "Fluido de Freio DOT 4", marca: "Controil", codigo: "C-2004" }
+        freios: { pecas: [{ item: "Pastilha Dianteira", marca: "Fras-le", codigo: "PD/60" }, { item: "Disco Dianteiro", marca: "Fremax", codigo: "BD-5600" }] },
+        suspensao: { pecas: [{ item: "Bucha da Bandeja", marca: "Axios", codigo: "011.123" }, { item: "Pivô", marca: "Nakata", codigo: "N1002" }] }
+    },
+    {
+        id: "v2",
+        placa: "XYZ9999",
+        marca: "Chevrolet",
+        modelo: "Corsa",
+        versao: "Wind 1.4",
+        ano: 1999,
+        oleo_filtros: {
+            viscosidade: "15W40 Semiaquático / Sintético", quantidade: "3.5 Litros",
+            filtros: [
+                { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM2" },
+                { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI01/1" },
+                { nome: "Filtro de Ar do Motor", marca: "Tecfil", codigo: "ARL1640" },
+                { nome: "Filtro de Ar Condicionado (Cabine)", marca: "Tecfil", codigo: "ACP811" }
             ]
         },
-        suspensao: {
+        amortecedores: {
             pecas: [
-                { item: "Bucha da Bandeja", marca: "Axios", codigo: "011.123" },
-                { item: "Pivô de Suspensão", marca: "Nakata", codigo: "N1002" },
-                { item: "Terminal de Direção", marca: "Nakata", codigo: "N1024" }
+                { item: "Amortecedor Dianteiro (Par)", marca: "Cofap", codigo: "MP30055" },
+                { item: "Amortecedor Traseiro (Par)", marca: "Cofap", codigo: "MP30056" },
+                { item: "Kit Dianteiro (Com Coxim)", marca: "Axios", codigo: "BR10900" },
+                { item: "Kit Dianteiro (Sem Coxim)", marca: "Axios", codigo: "BR10901" },
+                { item: "Kit Traseiro (Com Coxim)", marca: "Axios", codigo: "BR20901" },
+                { item: "Kit Traseiro (Sem Coxim)", marca: "Axios", codigo: "BR20900" }
             ]
-        }
+        },
+        freios: { pecas: [{ item: "Pastilha de Freio", marca: "Fras-le", codigo: "PD/63-A" }] },
+        suspensao: { pecas: [{ item: "Terminal de Direção", marca: "Viemar / Nakata", codigo: "N112" }] }
     }
-};
+];
 
-function buscarDados() {
-    const placaInput = document.getElementById("placa").value.trim().toUpperCase();
-    const categoriaSelecionada = document.getElementById("categoria").value;
-    const resultadoDiv = document.getElementById("resultado");
+let modoAtual = 'aba-placa';
 
-    if (!placaInput || !categoriaSelecionada) {
-        alert("Por favor, preencha a placa e selecione uma categoria.");
-        return;
-    }
-
-    const veiculo = bancoDadosVeiculos[placaInput];
-
-    if (!veiculo) {
-        resultadoDiv.style.display = "block";
-        resultadoDiv.innerHTML = `<div class='vehicle-info' style='background-color:#f8d7da; color:#721c24;'>
-            Placa ${placaInput} não cadastrada no sistema. Use a placa de teste: <strong>ABC1D23</strong>.
-        </div>`;
-        return;
-    }
-
-    resultadoDiv.style.display = "block";
-    let htmlContent = `<div class="vehicle-info">Veículo: ${veiculo.modelo} | Placa: ${placaInput}</div>`;
-
-    if (categoriaSelecionada === "oleo_filtros") {
-        const dados = veiculo.oleo_filtros;
-        htmlContent += `<h3 class="category-title">Óleo e Filtros</h3>`;
-        htmlContent += `<p><strong>Viscosidade Correta:</strong> ${dados.viscosidade}</p>`;
-        htmlContent += `<p><strong>Quantidade Recomendada:</strong> ${dados.quantidade}</p>`;
-        htmlContent += `<table>
-            <tr><th>Componente</th><th>Marca</th><th>Código</th></tr>`;
-        dados.filtros.forEach(f => {
-            htmlContent += `<tr><td>${f.nome}</td><td>${f.marca}</td><td><strong>${f.codigo}</strong></td></tr>`;
-        });
-        htmlContent += `</table>`;
-    } 
+function switchTab(tabId) {
+    modoAtual = tabId;
+    document.getElementById('btn-placa').classList.remove('active');
+    document.getElementById('btn-modelo').classList.remove('active');
+    document.getElementById('aba-placa').classList.remove('active');
+    document.getElementById('aba-modelo').classList.remove('active');
     
-    else if (categoriaSelecionada === "amortecedores") {
-        const dados = veiculo.amortecedores;
-        htmlContent += `<h3 class="category-title">Amortecedores e Kits</h3>`;
-        htmlContent += `<table>
-            <tr><th>Componente</th><th>Marca</th><th>Código</th></tr>`;
-        dados.pecas.forEach(p => {
-            htmlContent += `<tr><td>${p.item}</td><td>${p.marca}</td><td><strong>${p.codigo}</strong></td></tr>`;
-        });
-        htmlContent += `</table>`;
-    } 
-    
-    else if (categoriaSelecionada === "freios") {
-        const dados = veiculo.freios;
-        htmlContent += `<h3 class="category-title">Sistemas de Freios</h3>`;
-        htmlContent += `<table>
-            <tr><th>Componente</th><th>Marca Mais Usada</th><th>Código</th></tr>`;
-        dados.pecas.forEach(p => {
-            htmlContent += `<tr><td>${p.item}</td><td>${p.marca}</td><td><strong>${p.codigo}</strong></td></tr>`;
-        });
-        htmlContent += `</table>`;
-    } 
-    
-    else if (categoriaSelecionada === "suspensao") {
-        const dados = veiculo.suspensao;
-        htmlContent += `<h3 class="category-title">Outras Peças de Suspensão</h3>`;
-        htmlContent += `<table>
-            <tr><th>Componente</th><th>Marca Mais Usada</th><th>Código</th></tr>`;
-        dados.pecas.forEach(p => {
-            htmlContent += `<tr><td>${p.item}</td><td>${p.marca}</td><td><strong>${p.codigo}</strong></td></tr>`;
-        });
-        htmlContent += `</table>`;
+    if(tabId === 'aba-placa') {
+        document.getElementById('btn-placa').classList.add('active');
+    } else {
+        document.getElementById('btn-modelo').classList.add('active');
     }
-
-    resultadoDiv.innerHTML = htmlContent;
+    document.getElementById(tabId).classList.add('active');
+    document.getElementById("resultado").style.display = "none";
 }
-</script>
 
-</body>
-</html>
+function executarBusca() {
+    const categoria = document.getElementById("categoria").value;
+    const resultadoDiv = document.getElementById("resultado");
+    const loading = document.getElementById("loading");
+
+    if (!categoria) {
+        alert("Por favor, selecione uma categoria de peças.");
+        return;
+    }
+
