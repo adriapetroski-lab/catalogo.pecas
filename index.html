@@ -133,7 +133,7 @@
     </div>
     <div class="form-group">
         <label for="ano-input">Ano do Veículo</label>
-        <input type="number" id="ano-input" placeholder="Digite o ano (Ex: 2022)" min="1980" max="2027">
+        <input type="number" id="ano-input" placeholder="Digite o ano (Ex: 2022)">
     </div>
 
     <!-- Seleção de Categoria -->
@@ -156,7 +156,12 @@
 <script>
 const bancoDadosVeiculos = [
     {
-        id: "v1", placa: "ABC1D23", marca: "Volkswagen", modelo: "Gol", versao: "1.0 MPI", ano: 2022,
+        id: "v1", 
+        placa: "ABC1D23", 
+        marca: "VOLKSWAGEN", 
+        modelo: "GOL", 
+        versao: "1.0 MPI", 
+        ano: 2022,
         oleo_filtros: {
             viscosidade: "5W30 Sintético", quantidade: "3.5 Litros",
             filtros: [
@@ -180,7 +185,12 @@ const bancoDadosVeiculos = [
         suspensao: { pecas: [{ item: "Bucha da Bandeja", marca: "Axios", codigo: "011.123" }, { item: "Pivô", marca: "Nakata", codigo: "N1002" }] }
     },
     {
-        id: "v2", placa: "XYZ9999", marca: "Chevrolet", modelo: "Corsa", versao: "Wind 1.4", ano: 1999,
+        id: "v2", 
+        placa: "XYZ9999", 
+        marca: "CHEVROLET", 
+        modelo: "CORSA", 
+        versao: "Wind 1.4", 
+        ano: 1999,
         oleo_filtros: {
             viscosidade: "15W40 Semiaquático", quantidade: "3.5 Litros",
             filtros: [
@@ -207,7 +217,7 @@ const bancoDadosVeiculos = [
 
 function executarBusca() {
     const placaInput = document.getElementById("placa").value.trim().toUpperCase();
-    const modeloInput = document.getElementById("modelo-input").value.trim().toLowerCase();
+    const modeloInput = document.getElementById("modelo-input").value.trim().toUpperCase();
     const anoInput = parseInt(document.getElementById("ano-input").value);
     const categoria = document.getElementById("categoria").value;
     const resultadoDiv = document.getElementById("resultado");
@@ -231,7 +241,7 @@ function executarBusca() {
         veiculoLocalizado = bancoDadosVeiculos.find(v => v.placa === placaInput);
     } else {
         veiculoLocalizado = bancoDadosVeiculos.find(v => 
-            v.modelo.toLowerCase().includes(modeloInput) && v.ano === anoInput
+            v.modelo === modeloInput && v.ano === anoInput
         );
     }
 
@@ -242,14 +252,12 @@ function executarBusca() {
     } else {
         resultadoDiv.innerHTML = `
             <div class='vehicle-info' style='background-color:#f8d7da; color:#721c24; border-left-color:#dc3545;'>
-                ⚠️ Nenhum veículo localizado com os critérios informados. <br>
-                <strong>Para testar use:</strong> Placa: <code>ABC1D23</code> ou digite Modelo: <code>Gol</code> e Ano: <code>2022</code>.
+                ⚠️ Nenhum veículo localizado com os critérios informados. <br><br>
+                <strong>Para buscar por placa digite:</strong> <code>ABC1D23</code><br>
+                <strong>Para buscar por modelo digite:</strong> <code>Gol</code> e Ano: <code>2022</code>
             </div>`;
     }
 }
 
 function renderizarPainelResultados(veiculo, categoria) {
     const resultadoDiv = document.getElementById("resultado");
-    
-    let htmlContent = `
-        <div class="vehicle-info">
