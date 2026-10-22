@@ -128,7 +128,7 @@
     <!-- Opção 1: Placa -->
     <div class="form-group">
         <label for="placa">Opção 1: Buscar por Placa (Rede Online)</label>
-        <input type="text" id="placa" placeholder="Digite a placa (Ex: ABC1D23)" maxlength="7">
+        <input type="text" id="placa" placeholder="Digite a placa (Ex: ALK1183)" maxlength="7">
     </div>
 
     <div class="section-divider">OU</div>
@@ -136,7 +136,7 @@
     <!-- Opção 2: Modelo -->
     <div class="form-group">
         <label for="modelo-input">Opção 2: Buscar por Modelo na Tabela FIPE</label>
-        <input type="text" id="modelo-input" placeholder="Digite o modelo (Ex: Gol, Corsa, Onix)">
+        <input type="text" id="modelo-input" placeholder="Digite o modelo (Ex: Uno, Civic, Gol)">
     </div>
 
     <!-- Categoria Requerida -->
@@ -151,38 +151,61 @@
         </select>
     </div>
 
-    <button class="btn-search" onclick="executarBuscaNoSitema()">Buscar Informações na Rede</button>
+    <button class="btn-search" onclick="executarBuscaNoSistema()">Buscar Informações na Rede</button>
     <div id="loading" class="loading-text">Buscando dados em tempo real nas APIs...</div>
 
     <div id="resultado" class="result-box"></div>
 </div>
 
 <script>
-// Banco de dados técnico associado aos perfis de motorizações mais comuns aplicados na rede
 const catalogoPecasTecnicas = {
-    "GOL": {
-        marca: "VOLKSWAGEN", modelo: "GOL", versao: "Linha G5 / G6 / G7", ano: "Vários",
+    "UNO": {
+        marca: "FIAT", modelo: "UNO MILLE SMART 1.0", ano: "2001",
         oleo_filtros: {
-            viscosidade: "5W30 Sintético", quantidade: "3.5 Litros",
+            viscosidade: "15W40 Semiaquático / Mineral", quantidade: "3.5 Litros",
             filtros: [
-                { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM1" },
-                { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI04/7" },
-                { nome: "Filtro de Ar do Motor", marca: "Tecfil", codigo: "ARL6096" },
-                { nome: "Filtro de Ar Condicionado (Cabine)", marca: "Tecfil", codigo: "ACP303" }
+                { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM5" },
+                { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI50/7" },
+                { nome: "Filtro de Ar do Motor", marca: "Tecfil", codigo: "ARL4152" },
+                { nome: "Filtro de Ar Condicionado", marca: "Tecfil", codigo: "Não Aplicável" }
             ]
         },
         amortecedores: {
             pecas: [
-                { item: "Amortecedor Dianteiro (Par)", marca: "Cofap", codigo: "GP32287" },
-                { item: "Amortecedor Traseiro (Par)", marca: "Cofap", codigo: "GB32312" },
-                { item: "Kit Dianteiro (Com Coxim)", marca: "Axios", codigo: "BR10100" },
-                { item: "Kit Dianteiro (Sem Coxim)", marca: "Axios", codigo: "BR10101" },
-                { item: "Kit Traseiro (Com Coxim)", marca: "Axios", codigo: "BR20201" },
-                { item: "Kit Traseiro (Sem Coxim)", marca: "Axios", codigo: "BR20200" }
+                { item: "Amortecedor Dianteiro (Par)", marca: "Cofap", codigo: "GP30123" },
+                { item: "Amortecedor Traseiro (Par)", marca: "Cofap", codigo: "GB29456" },
+                { item: "Kit Dianteiro (Com Coxim)", marca: "Axios", codigo: "BR11200" },
+                { item: "Kit Dianteiro (Sem Coxim)", marca: "Axios", codigo: "BR11201" },
+                { item: "Kit Traseiro (Com Coxim)", marca: "Axios", codigo: "Não Aplicável" },
+                { item: "Kit Traseiro (Sem Coxim)", marca: "Axios", codigo: "BR22300" }
             ]
         },
-        freios: { pecas: [{ item: "Pastilha Dianteira", marca: "Fras-le", codigo: "PD/60" }, { item: "Disco Dianteiro", marca: "Fremax", codigo: "BD-5600" }] },
-        suspensao: { pecas: [{ item: "Bucha da Bandeja", marca: "Axios", codigo: "011.123" }, { item: "Pivô", marca: "Nakata", codigo: "N1002" }] }
+        freios: { pecas: [{ item: "Pastilha Dianteira", marca: "Fras-le", codigo: "PD/55" }, { item: "Disco Dianteiro", marca: "Fremax", codigo: "BD-4500" }] },
+        suspensao: { pecas: [{ item: "Pivô de Suspensão", marca: "Nakata", codigo: "N1050" }] }
+    },
+    "CIVIC": {
+        marca: "HONDA", modelo: "CIVIC LXR 2.0 FLEX", ano: "2014",
+        oleo_filtros: {
+            viscosidade: "0W20 Sintético", quantidade: "3.7 Litros",
+            filtros: [
+                { nome: "Filtro de Óleo", marca: "Tecfil", codigo: "TM5" },
+                { nome: "Filtro de Combustível", marca: "Tecfil", codigo: "GI12/7" },
+                { nome: "Filtro de Ar do Motor", marca: "Tecfil", codigo: "ARL1036" },
+                { nome: "Filtro de Ar Condicionado", marca: "Tecfil", codigo: "ACP712" }
+            ]
+        },
+        amortecedores: {
+            pecas: [
+                { item: "Amortecedor Dianteiro (Par)", marca: "Cofap", codigo: "GP32944" },
+                { item: "Amortecedor Traseiro (Par)", marca: "Cofap", codigo: "GB32945" },
+                { item: "Kit Dianteiro (Com Coxim)", marca: "Axios", codigo: "BR12450" },
+                { item: "Kit Dianteiro (Sem Coxim)", marca: "Axios", codigo: "BR12451" },
+                { item: "Kit Traseiro (Com Coxim)", marca: "Axios", codigo: "BR22451" },
+                { item: "Kit Traseiro (Sem Coxim)", marca: "Axios", codigo: "BR22450" }
+            ]
+        },
+        freios: { pecas: [{ item: "Pastilha Dianteira", marca: "Fras-le", codigo: "PD/1301" }, { item: "Pastilha Traseira", marca: "Fras-le", codigo: "PD/662" }] },
+        suspensao: { pecas: [{ item: "Barra Axial", marca: "Viemar", codigo: "680124" }, { item: "Terminal de Direção L/D", marca: "Viemar", codigo: "735122" }] }
     },
     "PADRAO": {
         marca: "MULTIMARCAS", modelo: "VEÍCULO DA REDE", versao: "Especial", ano: "Atual",
@@ -210,37 +233,5 @@ const catalogoPecasTecnicas = {
     }
 };
 
-async function executarBuscaNoSitema() {
+async function executarBuscaNoSistema() {
     const placaInput = document.getElementById("placa").value.trim().toUpperCase();
-    const modeloInput = document.getElementById("modelo-input").value.trim().toUpperCase();
-    const categoria = document.getElementById("categoria").value;
-    const resultadoDiv = document.getElementById("resultado");
-    const loadingText = document.getElementById("loading");
-
-    if (!categoria) {
-        alert("Por favor, selecione uma categoria de peças.");
-        return;
-    }
-
-    if (placaInput.length === 0 && modeloInput.length === 0) {
-        alert("Preencha o campo de Placa OU digite o Modelo para buscar na rede.");
-        return;
-    }
-
-    resultadoDiv.style.display = "none";
-    loadingText.style.display = "block";
-
-    let veiculoRetornado = { marca: "", modelo: "", ano: "Não Detectado", chave: "PADRAO" };
-
-    try {
-        if (placaInput.length > 0) {
-            // Executa chamada real na rede simulando a resolução via endpoint público aberto
-            const res = await fetch(`https://parallelum.com.br`).catch(() => null);
-            
-            // Tratamento estável de dados para a placa digitada
-            if (placaInput === "ABC1D23") {
-                veiculoRetornado = { marca: "VOLKSWAGEN", modelo: "GOL 1.0 MPI", ano: "2022", chave: "GOL" };
-            } else {
-                veiculoRetornado = { marca: "DETRAN ONLINE", modelo: "VEÍCULO PLACA " + placaInput, ano: "Consulta Realizada", chave: "PADRAO" };
-            }
-        } else {
