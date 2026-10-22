@@ -118,7 +118,7 @@
 <div class="container">
     <h1>Catálogo de Peças - adriapetroski-lab</h1>
     
-    <!-- OPÇÃO A: Campo de Placa -->
+    <!-- Opção 1: Placa -->
     <div class="form-group">
         <label for="placa">Opção 1: Buscar por Placa</label>
         <input type="text" id="placa" placeholder="Digite a placa (Ex: ABC1D23)" maxlength="7">
@@ -126,7 +126,7 @@
 
     <div class="section-divider">OU</div>
 
-    <!-- OPÇÃO B: Campos de Modelo e Ano -->
+    <!-- Opção 2: Modelo e Ano -->
     <div class="form-group">
         <label for="modelo-input">Opção 2: Buscar por Modelo</label>
         <input type="text" id="modelo-input" placeholder="Digite o modelo (Ex: Gol, Corsa)">
@@ -136,7 +136,7 @@
         <input type="number" id="ano-input" placeholder="Digite o ano (Ex: 2022)" min="1980" max="2027">
     </div>
 
-    <!-- Campo de Seleção de Categoria Obrigatório -->
+    <!-- Seleção de Categoria -->
     <div class="form-group" style="margin-top: 25px;">
         <label for="categoria">Selecione a Categoria de Peças Requerida:</label>
         <select id="categoria">
@@ -217,7 +217,6 @@ function executarBusca() {
         return;
     }
 
-    // Regra de Validação: Obriga o preenchimento correto de uma das formas
     const temPlaca = placaInput.length > 0;
     const temModeloEAno = modeloInput.length > 0 && !isNaN(anoInput);
 
@@ -253,3 +252,4 @@ function renderizarPainelResultados(veiculo, categoria) {
     const resultadoDiv = document.getElementById("resultado");
     
     let htmlContent = `
+        <div class="vehicle-info">
