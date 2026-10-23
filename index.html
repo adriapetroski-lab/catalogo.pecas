@@ -1,71 +1,271 @@
-function executarBuscaNoSistema() {
-    const placaInput = document.getElementById("placa").value.trim().toUpperCase();
-    const modeloInput = document.getElementById("modelo-input").value.trim().toUpperCase();
-    const categoriaSelect = document.getElementById("categoria").value;
-    const loadingDiv = document.getElementById("loading");
-    const resultadoDiv = document.getElementById("resultado");
-
-    if (!categoriaSelect) {
-        alert("Por favor, selecione uma categoria de peças.");
-        return;
-    }
-
-    loadingDiv.style.display = "block";
-    resultadoDiv.style.display = "none";
-    resultadoDiv.innerHTML = "";
-
-    setTimeout(() => {
-        loadingDiv.style.display = "none";
-        resultadoDiv.style.display = "block";
-
-        // Define qual chave do objeto usar (procura por UNO, CIVIC ou usa PADRAO)
-        let veiculoChave = "PADRAO";
-        if (placaInput === "ALK1183" || modeloInput.includes("UNO")) {
-            veiculoChave = "UNO";
-        } else if (modeloInput.includes("CIVIC")) {
-            veiculoChave = "CIVIC";
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Peças Linha Leve - Caiado Pneus</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+            --success: #28a745;
+            --accent: #ffc107;
         }
-
-        const dadosVeiculo = catalogoPecasTecnicas[veiculoChave] || catalogoPecasTecnicas["PADRAO"];
-
-        let htmlConteudo = `
-            <div class="vehicle-info">
-                <strong>Marca:</strong> ${dadosVeiculo.marca} <br>
-                <strong>Modelo:</strong> ${dadosVeiculo.modelo} <br>
-                <strong>Ano/Versao:</strong> ${dadosVeiculo.ano || dadosVeiculo.versao}
-            </div>
-            <div class="category-title">Categoria Selecionada: ${categoriaSelect.toUpperCase()}</div>
-        `;
-
-        if (categoriaSelect === "oleo_filtros" && dadosVeiculo.oleo_filtros) {
-            const oleo = dadosVeiculo.oleo_filtros;
-            htmlConteudo += `
-                <p><strong>Viscosidade:</strong> ${oleo.viscosidade}</p>
-                <p><strong>Quantidade:</strong> ${oleo.quantidade}</p>
-                <table>
-                    <thead><tr><th>Filtro</th><th>Marca</th><th>Código</th></tr></thead>
-                    <tbody>
-            `;
-            oleo.filtros.forEach(f => {
-                htmlConteudo += `<tr><td>${f.nome}</td><td>${f.marca}</td><td>${f.codigo}</td></tr>`;
-            });
-            htmlConteudo += `</tbody></table>`;
-        } else if (dadosVeiculo[categoriaSelect] && dadosVeiculo[categoriaSelect].pecas) {
-            htmlConteudo += `
-                <table>
-                    <thead><tr><th>Peça / Item</th><th>Marca</th><th>Código</th></tr></thead>
-                    <tbody>
-            `;
-            dadosVeiculo[categoriaSelect].pecas.forEach(p => {
-                htmlConteudo += `<tr><td>${p.item}</td><td>${p.marca}</td><td>${p.codigo}</td></tr>`;
-            });
-            htmlConteudo += `</tbody></table>`;
-        } else {
-            htmlConteudo += `<p>Nenhum detalhe encontrado para esta categoria.</p>`;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light);
+            color: var(--dark);
         }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .search-box {
+            background: #f1f3f5;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input#busca-principal {
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .btn-search {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-search:hover {
+            background-color: #004085;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+        .result-box {
+            display: none;
+            margin-top: 25px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            background: #fff;
+        }
+        .vehicle-header {
+            background: #e2e3e5;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            border-left: 6px solid var(--success);
+            margin-bottom: 20px;
+        }
+        .tab-menu {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #495057;
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: -2px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            background: #e9ecef;
+        }
+        .badge-brand {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
 
-        resultadoDiv.innerHTML = htmlConteudo;
-    }, 800);
-}
+<div class="container">
+    <h1>Consulta Técnica de Peças</h1>
+    <div class="subtitle">Catálogo de Linha Leve - Integração Olho no Carro & Marcas de Reposição</div>
 
+    <div class="search-box">
+        <div class="radio-group">
+            <label><input type="radio" name="tipo-busca" value="placa" checked onchange="alternarCampos()"> Buscar por Placa</label>
+            <label><input type="radio" name="tipo-busca" value="modelo" onchange="alternarCampos()"> Buscar por Modelo/Ano</label>
+        </div>
 
+        <div class="form-group">
+            <label id="label-busca" for="busca-principal">Placa do Veículo (Busca via Olho no Carro)</label>
+            <input type="text" id="busca-principal" placeholder="Ex: ABC1D23 ou CORSA">
+        </div>
+
+        <div class="form-group" id="grupo-ano" style="display: none;">
+            <label for="busca-ano">Ano do Veículo</label>
+            <input type="text" id="busca-ano" placeholder="Ex: 2014">
+        </div>
+
+        <button class="btn-search" onclick="realizarConsulta()">Consultar Dados Online</button>
+    </div>
+
+    <div class="loading" id="loader">Conectando ao banco de dados e simulando API Olho no Carro...</div>
+
+    <div class="result-box" id="resultados">
+        <div class="vehicle-header" id="info-veiculo"></div>
+
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="mudarAba(event, 'amortecedores')">Amortecedores & Kits</button>
+            <button class="tab-btn" onclick="mudarAba(event, 'freios-diant')">Freios Dianteiros</button>
+            <button class="tab-btn" onclick="mudarAba(event, 'freios-tras')">Freios Traseiros</button>
+            <button class="tab-btn" onclick="mudarAba(event, 'oleo-motor')">Óleo & Filtros</button>
+            <button class="tab-btn" onclick="mudarAba(event, 'suspensao')">Outros Suspensão</button>
+        </div>
+
+        <!-- AMORTECEDORES -->
+        <div id="amortecedores" class="tab-content active">
+            <table>
+                <thead>
+                    <tr><th>Componente</th><th>Marca</th><th>Código Técnico</th></tr>
+                </thead>
+                <tbody id="dados-amortecedores"></tbody>
+            </table>
+        </div>
+
+        <!-- FREIOS DIANTEIROS -->
+        <div id="freios-diant" class="tab-content">
+            <table>
+                <thead>
+                    <tr><th>Componente</th><th>Marca</th><th>Código Técnico</th></tr>
+                </thead>
+                <tbody id="dados-freios-diant"></tbody>
+            </table>
+        </div>
+
+        <!-- FREIOS TRASEIROS -->
+        <div id="freios-tras" class="tab-content">
+            <table>
+                <thead>
+                    <tr><th>Componente</th><th>Marca</th><th>Código Técnico</th></tr>
+                </thead>
+                <tbody id="dados-freios-tras"></tbody>
+            </table>
+        </div>
+
+        <!-- ÓLEO E FILTROS -->
+        <div id="oleo-motor" class="tab-content">
+            <div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-weight: bold;" id="especificacao-oleo"></div>
+            <table>
+                <thead>
+                    <tr><th>Filtro</th><th>Marca</th><th>Código Técnico</th></tr>
+                </thead>
+                <tbody id="dados-oleo"></tbody>
+            </table>
+        </div>
+
+        <!-- OUTROS SUSPENSÃO -->
+        <div id="suspensao" class="tab-content">
+            <table>
+                <thead>
+                    <tr><th>Componente</th><th>Marca</th><th>Código Técnico</th></tr>
+                </thead>
+                <tbody id="dados-suspensao"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Banco de dados local simulando os retornos e padrões de engenharia das marcas
+    const bancoPecas = {
+        "CORSA": {
+            modelo: "CHEVROLET CORSA SEDAN MAXX 1.4 ECONOFLEX", ano: "2009",
+            oleo: "Viscosidade: 5W30 Semiautomático ou Sintético | Qtd: 3.5 Litros",
+            filtros: [{f: "Filtro de Óleo", c: "PSL615"}, {f: "Filtro de Combustível", c: "GI04/7"}, {f: "Filtro de Ar Motor", c: "ARL8830"}, {f: "Filtro de Cabine (Ar Cond.)", c: "ACP001"}],
+            amortecedores: [{p: "Amortecedor Dianteiro (Par)", m: "Cofap", c: "GP30121"}, {p: "Amortecedor Traseiro (Par)", m: "Cofap", c: "GB27329"}, {p: "Kit Dianteiro COM Coxim", m: "Axios", c: "BR10140"}, {p: "Kit Dianteiro SEM Coxim", m: "Axios", c: "BR10141"}, {p: "Kit Traseiro COM Coxim", m: "Axios", c: "Não Aplicável"}, {p: "Kit Traseiro SEM Coxim", m: "Axios", c: "BR20220"}],
+            freiosDianteiros: [{p: "Pastilha Dianteira", m: "Fras-le", c: "PD/60"}, {p: "Disco Dianteiro", m: "Fremax", c: "BD-4605"}],
+            freiosTraseiros: [{p: "Tambor de Freio Traseiro", m: "Fremax", c: "BD-1220"}, {p: "Jogo de Sapatas/Faixas", m: "Fras-le", c: "FI/90-CP"}],
+            suspensao: [{p: "Pivô de Suspensão", m: "Viemar", c: "503042"}, {p: "Barra Axial", m: "Viemar", c: "680010"}, {p: "Terminal de Direção", m: "Nakata", c: "N3022"}, {p: "Bucha da Bandeja", m: "Axios", c: "BR33115"}]
+        },
+        "CIVIC": {
+            modelo: "HONDA CIVIC LXR 2.0 FLEX AUTOMÁTICO", ano: "2014",
+            oleo: "Viscosidade: 0W20 Sintético | Qtd: 3.7 Litros",
+            filtros: [{f: "Filtro de Óleo", c: "TM5"}, {f: "Filtro de Combustível", c: "GI12/7"}, {f: "Filtro de Ar Motor", c: "ARL1036"}, {f: "Filtro de Cabine (Ar Cond.)", c: "ACP712"}],
